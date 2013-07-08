@@ -30,7 +30,7 @@ class action_plugin_xslfo extends DokuWiki_Action_Plugin {
     /**
      * Register the events
      */
-    function register(&$controller) {
+    public function register(&$controller) {
         $controller->register_hook('ACTION_ACT_PREPROCESS', 'BEFORE', $this, 'preprocess', array());
     }
 
@@ -41,7 +41,7 @@ class action_plugin_xslfo extends DokuWiki_Action_Plugin {
      * @param array      $param
      * @return bool
      */
-    function preprocess(&$event, $param) {
+    public function preprocess(&$event, $param) {
         global $ID, $REV, $ACT;
 
         // Check that this is our action
@@ -93,18 +93,12 @@ class action_plugin_xslfo extends DokuWiki_Action_Plugin {
      * @param string $pdf_filename The full path to write the PDF to
      * @return boolean True if the PDF was generated successfully
      */
-    public function generatePDF($cache_key, $pdf_filename) {
+    protected function generatePDF($cache_key, $pdf_filename) {
         global $ID, $REV;
-
-        // Get the XML and save it to a cache
-        $xml = p_cached_output(wikiFN($ID, $REV), 'xml', $ID);
-        //$xml_cache = new cache_renderer($ID, wikiFN($ID, $REV), 'xml');
-        $xml_filename = getCacheName($cache_key, '.xml');
-        io_saveFile($xml_filename, $xml);
 
         // Replace placeholders in the command string
         $filenames = array(
-            'xml' => $xml_filename,
+            'xml' => $this->setupXML(),
             'xsl' => $this->template_path,
             'pdf' => $pdf_filename,
         );
@@ -125,6 +119,58 @@ class action_plugin_xslfo extends DokuWiki_Action_Plugin {
         } else {
             return true;
         }
+    }
+
+    /**
+     * Get the page XML, add some useful paths to it (in the
+     * &lt;dokuwiki&gt; element) and return the filename of the cached XML file.
+     * Doesn't check for an existing XML cache because at this point we always
+     * want to re-render. The image paths are added here, rather than in the XML
+     * plugin, to avoid data exposure (the end user won't ever see this XML).
+     * 
+     * @global string $ID
+     * @global string $REV
+     * @global array $conf
+     * @return string Full filesystem path to the cached XML file
+     */
+    protected function setupXML() {
+        global $ID, $REV, $conf;
+
+        // Construct the new dokuwiki element
+        $dw_element = new SimpleXMLElement('<dokuwiki></dokuwiki>');
+        $dw_element->addChild('tplincdir', strtr(tpl_incdir(), '\\', '/'));
+        $dw_element->addChild('mediadir', strtr($conf['mediadir'], '\\', '/'));
+
+        // Get the basic page XML
+        $file = wikiFN($ID, $REV);
+        $instructions = p_get_instructions(io_readWikiPage($file, $ID, $REV));
+        $original_xml = p_render('xml', $instructions, $info);
+
+        // Add image paths (for resized images) for use in the XSL
+        $page = new SimpleXMLElement($original_xml);
+        foreach ($page->xpath('//media') as $media) {
+            $src = mediaFN($media['src']);
+            $ext = current(mimetype($src, false));
+            if($media['width'] && $media['height'] > 0) {
+                $filename = media_crop_image($src, $ext, (int)$media['width'], (int)$media['height']);
+            } else {
+                $filename = media_resize_image($src, $ext, (int)$media['width'], (int)$media['height']);
+            }
+            $media_filename = $dw_element->addChild('media_filename', $filename);
+            $media_filename->addAttribute('src', $media['src']);
+            $media_filename->addAttribute('width', $media['width']);
+            $media_filename->addAttribute('height', $media['height']);
+        }
+
+        // Insert the new XML into the page's XML
+        $new_xml = str_replace('<?xml version="1.0"?>', '', $dw_element->asXML());
+        $xml = str_replace('</document>', $new_xml.'</document>', $original_xml);
+
+        // Cache the XML (for use by the XSLFO processor, not subsequent calls
+        // to this method) and return its full filesystem path.
+        $xml_cache = new cache($ID.$REV.'_xslfo', '.xml');
+        $xml_cache->storeCache($xml);
+        return $xml_cache->cache;
     }
 
     /**
