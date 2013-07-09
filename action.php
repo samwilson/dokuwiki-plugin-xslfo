@@ -111,7 +111,7 @@ class action_plugin_xslfo extends DokuWiki_Action_Plugin {
         if (file_exists($pdf_filename)) {
             unlink($pdf_filename);
         }
-        io_exec($command, null, $out);
+        $out = exec($command);
         if (!file_exists($pdf_filename)) {
             msg("Unable to produce PDF.", -1);
             msg("Command: <code>$command</code><br />Output:<pre>".$out.'</pre>', 0, '', '', MSG_ADMINS_ONLY);
