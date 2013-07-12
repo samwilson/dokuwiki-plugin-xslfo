@@ -111,10 +111,10 @@ class action_plugin_xslfo extends DokuWiki_Action_Plugin {
         if (file_exists($pdf_filename)) {
             unlink($pdf_filename);
         }
-        $out = exec($command);
+        exec($command, $out);
         if (!file_exists($pdf_filename)) {
             msg("Unable to produce PDF.", -1);
-            msg("Command: <code>$command</code><br />Output:<pre>".$out.'</pre>', 0, '', '', MSG_ADMINS_ONLY);
+            msg("Command: <code>$command</code><br />Output:<pre>".join("\n", $out).'</pre>', 0, '', '', MSG_ADMINS_ONLY);
             return false;
         } else {
             return true;
@@ -134,12 +134,15 @@ class action_plugin_xslfo extends DokuWiki_Action_Plugin {
      * @return string Full filesystem path to the cached XML file
      */
     protected function setupXML() {
-        global $ID, $REV, $conf;
+        global $ID, $REV, $INFO, $conf;
 
         // Construct the new dokuwiki element
         $dw_element = new SimpleXMLElement('<dokuwiki></dokuwiki>');
         $dw_element->addChild('tplincdir', strtr(tpl_incdir(), '\\', '/'));
         $dw_element->addChild('mediadir', strtr($conf['mediadir'], '\\', '/'));
+        $dw_element->addChild('lastmod', dformat($INFO['lastmod']));
+        $params = ($REV) ? array('rev'=> $REV) : null;
+        $dw_element->addChild('url', wl($ID, $params, true));
 
         // Get the basic page XML
         $file = wikiFN($ID, $REV);
