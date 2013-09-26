@@ -150,7 +150,13 @@ class action_plugin_xslfo extends DokuWiki_Action_Plugin {
         $original_xml = p_render('xml', $instructions, $info);
 
         // Add image paths (for resized images) for use in the XSL
-        $page = new SimpleXMLElement($original_xml);
+        try {
+            $page = new SimpleXMLElement($original_xml);
+        } catch (Exception $e) {
+            msg($e->getMessage(), -1);
+            msg("Unable to parse XML: <pre>".htmlspecialchars($original_xml)."</pre>", 0, '', '', MSG_ADMINS_ONLY);
+            return false;
+        }
         foreach ($page->xpath('//media') as $media) {
             $src = mediaFN($media['src']);
             $ext = current(mimetype($src, false));
