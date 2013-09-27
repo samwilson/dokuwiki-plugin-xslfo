@@ -2,7 +2,7 @@
 DokuWiki Plugin for PDF Export with XSL-FO
 ==========================================
 
-By Sam Wilson sam@samwilson.id.au July 2013.
+By Sam Wilson sam@samwilson.id.au September 2013.
 
 With functionality and design modeled on the dw2pdf plugin.
 Requires the xml plugin.

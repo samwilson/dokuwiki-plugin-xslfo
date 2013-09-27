@@ -45,7 +45,7 @@ class action_plugin_xslfo extends DokuWiki_Action_Plugin {
         global $ID, $REV, $ACT;
 
         // Check that this is our action
-        if ($ACT != 'export_pdf') {
+        if ($ACT != 'export_xslfo') {
             return false;
         }
         $event->preventDefault();
