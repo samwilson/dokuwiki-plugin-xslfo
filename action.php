@@ -86,6 +86,7 @@ class action_plugin_xslfo extends DokuWiki_Action_Plugin {
 
     /**
      * Generate the PDF file.
+     * If $_GET['debug'] is set, the raw XML will be output.
      * 
      * @global string $ID
      * @global string $REV
@@ -102,6 +103,14 @@ class action_plugin_xslfo extends DokuWiki_Action_Plugin {
             'xsl' => $this->template_path,
             'pdf' => $pdf_filename,
         );
+
+        // Display final XML for debugging purposes (for admins only)
+        if (isset($_GET['debug'])) {
+            $xml = htmlspecialchars(file_get_contents($filenames['xml']));
+            msg("Final XML: <pre>$xml</pre>", 0, '', '', MSG_ADMINS_ONLY);
+            return false;
+        }
+
         $command_template = $this->getConf('command').' 2>&1';
         $command = preg_replace_callback('/{(\w+)}/', function ($m) use ($filenames) {
                     return $filenames[$m[1]];

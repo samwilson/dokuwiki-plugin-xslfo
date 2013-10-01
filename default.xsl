@@ -8,6 +8,8 @@
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:fo="http://www.w3.org/1999/XSL/Format">
+    <xsl:variable name="tplincdir" select="document/dokuwiki/tplincdir/text()" />
+    <xsl:variable name="mediadir" select="document/dokuwiki/mediadir/text()" />
 
     <xsl:template match="/">
         <fo:root>
@@ -47,22 +49,37 @@
         <fo:block font-size="8pt" border-bottom="thin solid black">
             <fo:block-container position="absolute">
                 <fo:block text-align="left">
-                    <xsl:value-of select="//header[@level='1' and @pos='1']" />
+                    <xsl:value-of select="//header[@level='1']" />
                 </fo:block>
             </fo:block-container>
             <fo:block text-align="center">
-                *
+                
             </fo:block>
             <fo:block-container position="absolute">
                 <fo:block text-align="right">
-                    Page <fo:page-number/> of <fo:page-number-citation ref-id="document-end" />
+                    <xsl:value-of select="//dokuwiki/lastmod/text()" />
                 </fo:block>
             </fo:block-container>
         </fo:block>
     </xsl:template>
     <xsl:template name="footer">
         <fo:block font-size="8pt" border-top="thin solid black" text-align="center">
-            [URL]
+            <fo:table table-layout="fixed">
+                <fo:table-body>
+                    <fo:table-row>
+                        <fo:table-cell>
+                            <fo:block text-align="left">
+                                <xsl:value-of select="//dokuwiki/url/text()" />
+                            </fo:block>
+                        </fo:table-cell>
+                        <fo:table-cell>
+                            <fo:block text-align="right">
+                                Page <fo:page-number/> of <fo:page-number-citation ref-id="document-end" />
+                            </fo:block>
+                        </fo:table-cell>
+                    </fo:table-row>
+                </fo:table-body>
+            </fo:table>
         </fo:block>
     </xsl:template>
     <!-- End header and footer -->
@@ -177,6 +194,8 @@
         <fo:block></fo:block>
     </xsl:template>
 
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- Links -->
     <xsl:template match="link">
         <fo:basic-link color="blue">
             <xsl:choose>
@@ -195,6 +214,41 @@
         </fo:basic-link>
     </xsl:template>
 
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- Images and other attachments -->
+    <xsl:template match="media">
+        <xsl:variable name="src" select="@src" />
+        <xsl:variable name="ext" select="@ext" />
+        <xsl:variable name="width" select="@width" />
+        <xsl:variable name="height" select="@height" />
+        <xsl:variable name="filename">
+            <xsl:value-of select="//dokuwiki/media_filename[@src=$src and @width=$width and @height=$height]/text()" />
+        </xsl:variable>
+        <fo:inline>
+            <fo:basic-link color="blue">
+                <xsl:attribute name="external-destination">
+                    <xsl:value-of select="@href"/>
+                </xsl:attribute>
+                <xsl:choose>
+                    <xsl:when test="(@ext!='jpg' and @ext!='gif') or @linking = 'linkonly'">
+                        <fo:external-graphic content-width="1em" src="url('{$tplincdir}../../images/fileicons/{$ext}.png')" />
+                        <xsl:apply-templates />
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <fo:external-graphic src="url({$filename})" />
+                    </xsl:otherwise>
+                </xsl:choose>
+                <xsl:choose>
+                    <xsl:when test="(@ext!='jpg' and @ext!='gif' and not(normalize-space(.))) or @linking = 'linkonly'">
+                        <xsl:value-of select="@basename" />
+                    </xsl:when>
+                </xsl:choose>
+            </fo:basic-link>
+        </fo:inline>
+    </xsl:template>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- Lists -->
     <xsl:template match="listu|listo">
         <fo:list-block provisional-distance-between-starts="1cm" provisional-label-separation="0.5cm">
             <xsl:attribute name="space-after">
