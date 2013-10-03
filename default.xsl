@@ -120,7 +120,7 @@
 
     <!-- Paragraphs -->
     <xsl:template match="p">
-        <fo:block font-size="10pt" line-height="15pt" space-after="12pt">
+        <fo:block font-size="10pt" space-after="12pt">
             <xsl:apply-templates />
         </fo:block>
     </xsl:template>
@@ -147,6 +147,14 @@
     <xsl:template match="underline">
         <fo:inline text-decoration="underline">
             <xsl:apply-templates />
+        </fo:inline>
+    </xsl:template>
+
+    <xsl:template match="multiplyentity">
+        <fo:inline>
+            <xsl:value-of select="./x" />
+            <xsl:text>&#215;</xsl:text>
+            <xsl:value-of select="./y" />
         </fo:inline>
     </xsl:template>
 
@@ -250,41 +258,34 @@
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <!-- Lists -->
     <xsl:template match="listu|listo">
-        <fo:list-block provisional-distance-between-starts="1cm" provisional-label-separation="0.5cm">
-            <xsl:attribute name="space-after">
-                <xsl:choose>
-                    <xsl:when test="ancestor::ul or ancestor::ol">
-                        <xsl:text>0pt</xsl:text>
-                    </xsl:when>
-                    <xsl:otherwise>
-                        <xsl:text>12pt</xsl:text>
-                    </xsl:otherwise>
-                </xsl:choose>
-            </xsl:attribute>
+        <fo:list-block provisional-distance-between-starts="0.5cm" provisional-label-separation="0.2cm" font-size="10pt">
             <xsl:attribute name="start-indent">
                 <xsl:variable name="ancestors">
                     <xsl:choose>
-                        <xsl:when test="count(ancestor::ol) or count(ancestor::ul)">
-                            <xsl:value-of select="1 + 
-                                    (count(ancestor::ol) + 
-                                     count(ancestor::ul)) * 
-                                    1.25"/>
+                        <xsl:when test="count(ancestor::listo) or count(ancestor::listu)">
+                            <xsl:value-of select="count(ancestor::listo) + count(ancestor::listu)"/>
                         </xsl:when>
                         <xsl:otherwise>
-                            <xsl:text>1</xsl:text>
+                            <xsl:text>0</xsl:text>
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:variable>
-                <xsl:value-of select="concat($ancestors, 'cm')"/>
+                <xsl:value-of select="concat((0.5+($ancestors*0.5)), 'cm')"/>
             </xsl:attribute>
             <xsl:apply-templates />
         </fo:list-block>
     </xsl:template>
 
-    <xsl:template match="listitem">
+    <xsl:template match="listu/listitem">
         <fo:list-item>
             <fo:list-item-label end-indent="label-end()">
-                <fo:block>&#x2022;</fo:block>
+                <fo:block>
+                    <xsl:choose>
+                        <xsl:when test="count(ancestor::listu)=1">&#x2022;</xsl:when>
+                        <xsl:when test="count(ancestor::listu)=2">&#x2013;</xsl:when>
+                        <xsl:otherwise>&#x2219;</xsl:otherwise>
+                    </xsl:choose>
+                </fo:block>
             </fo:list-item-label>
             <fo:list-item-body start-indent="body-start()">
                 <fo:block>
@@ -293,9 +294,32 @@
             </fo:list-item-body>
         </fo:list-item>
     </xsl:template>
-
+    <xsl:template match="listo/listitem">
+        <fo:list-item>
+            <fo:list-item-label end-indent="label-end()">
+                <fo:block>
+                    <xsl:variable name="format">
+                        <xsl:choose>
+                            <xsl:when test="count(ancestor::listo)=1">1.</xsl:when>
+                            <xsl:when test="count(ancestor::listo)=2">a)</xsl:when>
+                            <xsl:when test="count(ancestor::listo)=3">I.</xsl:when>
+                            <xsl:when test="count(ancestor::listo)=4">A)</xsl:when>
+                            <xsl:when test="count(ancestor::listo)=5">i.</xsl:when>
+                            <xsl:otherwise>1.</xsl:otherwise>
+                        </xsl:choose>
+                    </xsl:variable>
+                    <xsl:number format="{$format}" />
+                </fo:block>
+            </fo:list-item-label>
+            <fo:list-item-body start-indent="body-start()">
+                <fo:block>
+                    <xsl:apply-templates />
+                </fo:block>
+            </fo:list-item-body>
+        </fo:list-item>
+    </xsl:template>
     <xsl:template match="listcontent">
-        <fo:block font-size="10pt" line-height="15pt">
+        <fo:block>
             <xsl:apply-templates />
         </fo:block>
     </xsl:template>

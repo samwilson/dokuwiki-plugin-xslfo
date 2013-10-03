@@ -199,13 +199,14 @@ class action_plugin_xslfo extends DokuWiki_Action_Plugin {
      * @return string The full path to the XSL file
      */
     protected function setupTemplate() {
-        if (isset($_REQUEST['tpl'])) {
+        if (!empty($_REQUEST['tpl'])) {
             $this->template = $_REQUEST['tpl'];
         } else {
             $this->template = $this->getConf('template');
         }
         $this->template_path = realpath(tpl_incdir().$this->template);
-        if (!$this->template_path) {
+        // Might resolve to a directory, so check it's a file.
+        if (!is_file($this->template_path)) {
             $this->template = 'default.xsl';
             $this->template_path = __DIR__.DIRECTORY_SEPARATOR.$this->template;
         }
