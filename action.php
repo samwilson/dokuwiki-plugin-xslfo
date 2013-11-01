@@ -158,14 +158,25 @@ class action_plugin_xslfo extends DokuWiki_Action_Plugin {
         $instructions = p_get_instructions(io_readWikiPage($file, $ID, $REV));
         $original_xml = p_render('xml', $instructions, $info);
 
-        // Add image paths (for resized images) for use in the XSL
+        // Some plugins might break the XML rendering.
         try {
+            // Produces an E_WARNING error message for each error found in the
+            // XML data and additionally throws an Exception if the XML data
+            // could not be parsed. 
+            libxml_use_internal_errors(true);
             $page = new SimpleXMLElement($original_xml);
         } catch (Exception $e) {
             msg($e->getMessage(), -1);
-            msg("Unable to parse XML: <pre>".htmlspecialchars($original_xml)."</pre>", 0, '', '', MSG_ADMINS_ONLY);
+            $admin_msg = '';
+            foreach (libxml_get_errors() as $error) {
+                $admin_msg .= "$error->message (line $error->line column $error->column)<br />";
+            }
+            $admin_msg .= "Unable to parse XML: <pre>".htmlspecialchars($original_xml)."</pre>";
+            msg($admin_msg, 0, '', '', MSG_ADMINS_ONLY);
             return false;
         }
+
+        // Add image paths (for resized images) for use in the XSL
         foreach ($page->xpath('//media') as $media) {
             $src = mediaFN($media['src']);
             $ext = current(mimetype($src, false));

@@ -16,7 +16,7 @@
 
             <fo:layout-master-set>
                 <fo:simple-page-master master-name="A4-portrait" page-height="29.7cm" page-width="21.0cm" margin="2cm">
-                    <fo:region-body margin-top="2.5cm" margin-bottom="2.5cm"/>
+                    <fo:region-body margin-top="1.5cm" margin-bottom="1.5cm"/>
                     <fo:region-before extent="2.0cm"/>
                     <fo:region-after extent="2.0cm"/>
                 </fo:simple-page-master>
@@ -322,6 +322,133 @@
         <fo:block>
             <xsl:apply-templates />
         </fo:block>
+    </xsl:template>
+
+    <!-- Definitionlist plugin - - - - - - - - - - - - - - - - - - - - - - - -->
+    <xsl:template match="dl">
+        <fo:table table-layout="fixed" width="100%" font-size="10pt">
+            <fo:table-body>
+                <xsl:for-each select="dt">
+                    <xsl:variable name="current-term" select="."/>
+                    <fo:table-row>
+                        <fo:table-cell font-weight="bold" width="5.5cm">
+                            <fo:block>
+                                <xsl:apply-templates />
+                            </fo:block>
+                        </fo:table-cell>
+                        <fo:table-cell>
+                            <fo:block>
+                                <xsl:apply-templates select="following-sibling::dd[preceding-sibling::dt[1] = $current-term]" />
+                            </fo:block>
+                        </fo:table-cell>
+                    </fo:table-row>
+                </xsl:for-each>
+            </fo:table-body>
+        </fo:table>
+    </xsl:template>
+    <xsl:template match="dd">
+        <fo:block>
+            <xsl:apply-templates />
+        </fo:block>
+    </xsl:template>
+
+    <!-- Tables  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <xsl:template match="table">
+        <fo:table table-layout="fixed" margin="1cm auto 0.8cm auto" keep-together.within-page="0.8">
+            <xsl:attribute name="width">
+                <xsl:value-of select="substring-before(substring-after(@style,'width:'),';')" />
+            </xsl:attribute>
+            <xsl:apply-templates select="col" />
+            <fo:table-body>
+                <xsl:apply-templates select="*[not(self::col)]" />
+            </fo:table-body>
+        </fo:table>
+    </xsl:template>
+
+    <xsl:template match="col">
+        <fo:table-column>
+            <xsl:variable name="width" select="substring-after(@style, 'width:')" />
+            <xsl:choose>
+                <xsl:when test="$width != ''">
+                    <xsl:attribute name="column-width">
+                        <xsl:value-of select="normalize-space($width)" />
+                    </xsl:attribute>
+                </xsl:when>
+            </xsl:choose>
+            <xsl:apply-templates />
+        </fo:table-column>
+    </xsl:template>
+
+    <xsl:template match="tablerow">
+        <fo:table-row>
+            <xsl:apply-templates />
+        </fo:table-row>
+    </xsl:template>
+
+    <xsl:template match="tableheader">
+        <fo:table-cell border="thin solid black" start-indent="0" end-indent="0"
+                       background-color="#efefef" display-align="after" padding="1mm">
+            <xsl:attribute name="number-rows-spanned">
+                <xsl:choose>
+                    <xsl:when test="@rowspan">
+                        <xsl:value-of select="@rowspan" />
+                    </xsl:when>
+                    <xsl:otherwise>1</xsl:otherwise>
+                </xsl:choose>
+            </xsl:attribute>
+            <xsl:attribute name="number-columns-spanned">
+                <xsl:choose>
+                    <xsl:when test="@colspan">
+                        <xsl:value-of select="@colspan" />
+                    </xsl:when>
+                    <xsl:otherwise>1</xsl:otherwise>
+                </xsl:choose>
+            </xsl:attribute>
+            <fo:block font-weight="bold">
+                <xsl:attribute name="text-align">
+                    <xsl:choose>
+                        <xsl:when test="@align">
+                            <xsl:value-of select="@align" />
+                        </xsl:when>
+                        <xsl:otherwise>left</xsl:otherwise>
+                    </xsl:choose>
+                </xsl:attribute>
+                <xsl:apply-templates />
+            </fo:block>
+        </fo:table-cell>
+    </xsl:template>
+
+    <xsl:template match="tablecell">
+        <fo:table-cell border="thin solid black" start-indent="0" end-indent="0" padding="1mm">
+            <xsl:attribute name="number-rows-spanned">
+                <xsl:choose>
+                    <xsl:when test="@rowspan">
+                        <xsl:value-of select="@rowspan" />
+                    </xsl:when>
+                    <xsl:otherwise>1</xsl:otherwise>
+                </xsl:choose>
+            </xsl:attribute>
+            <xsl:attribute name="number-columns-spanned">
+                <xsl:choose>
+                    <xsl:when test="@colspan">
+                        <xsl:value-of select="@colspan" />
+                    </xsl:when>
+                    <xsl:otherwise>1</xsl:otherwise>
+                </xsl:choose>
+            </xsl:attribute>
+            <fo:block>
+                <xsl:attribute name="text-align">
+                    <xsl:choose>
+                        <xsl:when test="@align">
+                            <xsl:value-of select="@align" />
+                        </xsl:when>
+                        <xsl:otherwise>left</xsl:otherwise>
+                    </xsl:choose>
+                </xsl:attribute>
+                <xsl:value-of select="@rowspan" />
+                <xsl:apply-templates />
+            </fo:block>
+        </fo:table-cell>
     </xsl:template>
 
 </xsl:stylesheet>
