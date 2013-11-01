@@ -1,7 +1,7 @@
 base    xslfo
 author  Sam Wilson
 email   sam@samwilson.id.au
-date    2013-10-03
+date    2013-11-01
 name    XSL-FO plugin
 desc    Export single pages to PDF with XSL-FO
 url     http://www.dokuwiki.org/plugin:xslfo
