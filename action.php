@@ -30,7 +30,7 @@ class action_plugin_xslfo extends DokuWiki_Action_Plugin {
     /**
      * Register the events
      */
-    public function register(&$controller) {
+    public function register(Doku_Event_Handler $controller) {
         $controller->register_hook('ACTION_ACT_PREPROCESS', 'BEFORE', $this, 'preprocess', array());
     }
 
